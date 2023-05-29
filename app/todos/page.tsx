@@ -1,12 +1,10 @@
-import Link from "next/link";
 import NewTodoForm from "../components/newTodoForm";
 import { getAllTodos } from "@/lib/mongo/todo";
-
-export const dynamic = "force-dynamic";
+import DeleteBtn from "../components/deleteBtn";
+import Todo from "../components/todo";
 
 const Page = async () => {
   const { todos } = await getAllTodos();
-
   return (
     <section className="py-20">
       <div className="container">
@@ -21,7 +19,10 @@ const Page = async () => {
         </h2>
         <ul className="mt-4 flex flex-col gap-1">
           {todos?.map((todo) => (
-            <li key={todo._id}>{todo.name}</li>
+            <li key={todo.id} className="flex gap-2 items-center py-2 border-b">
+              <Todo todo={todo} />
+              <DeleteBtn id={todo.id} />
+            </li>
           ))}
         </ul>
       </div>

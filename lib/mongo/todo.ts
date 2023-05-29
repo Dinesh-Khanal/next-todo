@@ -1,45 +1,8 @@
-import clientPromise from "@/lib/mongo/client";
-import { ObjectId, Db, Collection } from "mongodb";
-
-type ITodo = {
-  _id?: string;
-  name: string;
-  description?: string;
-  status?: boolean;
-};
-
-let client;
-let db: Db;
-let todos: Collection<ITodo>;
-
-async function init() {
-  if (db) return;
-  try {
-    client = await clientPromise;
-    db = client.db();
-    todos = db.collection("todos");
-  } catch (error) {
-    throw new Error("Failed to connect to the database.");
-  }
-}
-
-(async () => {
-  await init();
-})();
-
-//////////////
-/// TODOS ///
-/////////////
-
+import prisma from "@/lib/mongo/prisma";
 export async function getAllTodos() {
   try {
-    if (!todos) await init();
-
-    const result = await todos
-      .find({})
-      .map((todo) => ({ ...todo, _id: todo._id }))
-      .toArray();
-    return { todos: result };
+    const todos = await prisma.todo.findMany();
+    return { todos };
   } catch (error) {
     return { error: "Failed to fetch todos!" };
   }
@@ -47,11 +10,9 @@ export async function getAllTodos() {
 
 export async function getTodoById(id: string) {
   try {
-    if (!todos) await init();
-
-    const todo = await todos.findOne({ _id: id });
+    const todo = await prisma.todo.findUnique({ where: { id } });
     if (!todo) throw new Error();
-    return { todo: { ...todo, _id: todo._id } };
+    return { todo };
   } catch (error) {
     return { error: "Failed to get todo!" };
   }
@@ -59,14 +20,29 @@ export async function getTodoById(id: string) {
 
 export async function createTodo(name: string) {
   try {
-    if (!todos) await init();
-
-    return await todos.insertOne({ name, status: false });
+    const todo = await prisma.todo.create({ data: { name, status: false } });
+    return { todo };
   } catch (error) {
     return { error: "Failed to create todo!" };
   }
 }
 
-export async function deleteTodo(id: string) {}
+export async function deleteTodo(id: string) {
+  try {
+    return await prisma.todo.delete({ where: { id } });
+  } catch (error) {
+    return { error };
+  }
+}
 
-export async function completeTodo(id: string) {}
+export async function completeTodo(id: string, status: boolean) {
+  try {
+    const updatedTodo = await prisma.todo.update({
+      where: { id },
+      data: { status: true },
+    });
+    return { updatedTodo };
+  } catch (error) {
+    return { error };
+  }
+}
